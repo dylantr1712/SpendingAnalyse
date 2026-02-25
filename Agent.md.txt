@@ -1,0 +1,63 @@
+---
+
+# Agent.md instructions
+
+Read Roadmap.md first.
+
+# Roadmap.md
+Roadmap.md file can be created if it doesn't exist yet.
+Roadmap.md should act as a list of planned actions for the project.
+Roadmap.md should be continuously updated to mark sections as complete as progress is made.
+Roadmap convention: Begin entries with `+` for completed items, `-` for pending/to-do items. When a task is completed, change its leading `-` to `+` and optionally append a brief note.
+
+---
+
+# Deterministic category seeds based on observed merchants in CSVData.csv
+# Apply in order: first match wins.
+# Suggested matching target: normalized description string (uppercased, punctuation removed, whitespace collapsed).
+
+RULE_CATEGORY_PATTERNS: list[tuple[str, str]] = [
+    # --- Transport ---
+    (r"\bTRANSPORTFORNSW\s+OPAL\b", "Transport"),
+
+    # --- Groceries ---
+    (r"\bWOOLWORTHS\b", "Groceries"),
+
+    # --- Utilities / Bills ---
+    (r"\bSUPERLOOP\b", "Utilities"),
+    (r"\bAUSSIE\s+BROADBAND\b", "Utilities"),
+    (r"\bORIGIN\s+ENERGY\b", "Utilities"),
+    (r"\bGLOBIRD\s+ENERGY\b", "Utilities"),
+    (r"\bSYDNEY\s+WATER\b", "Utilities"),
+    (r"\bFAIRFIELD\s+COUNCIL\b", "Utilities"),
+
+    # --- Health ---
+    (r"\bMEDIBANK\b", "Health"),
+    (r"\bCHEMIST\s+WAREHOUSE\b", "Health"),
+    (r"\bCHRIS\s+OBRIEN\s+LIFEHOUSE\b", "Health"),
+
+    # --- Subscriptions ---
+    (r"\bAMZNPRIMEAU\b|\bAMAZON\s+PRIME\b", "Subscriptions"),
+    (r"\bNETFLIX\b", "Subscriptions"),
+    (r"\bUBER\s+ONE\b", "Subscriptions"),
+    (r"\bOPENAI\b|\bCHATGPT\b", "Subscriptions"),
+
+    # --- Food Delivery / Eating out ---
+    (r"\bUBER\s+EATS\b", "Food Delivery"),
+
+    # --- Shopping / Retail ---
+    # Amazon purchases (NOT Prime membership) -> Shopping
+    (r"\bAMAZON\b.*\b(MARKETPLACE|MKTPLC|RETAIL)\b", "Shopping"),
+    (r"\bBUNNINGS\b", "Shopping"),
+    (r"\bALIEXPRESS\b", "Shopping"),
+    (r"\bIKEA\b", "Shopping"),
+
+    # --- Investments / Brokers ---
+    (r"\bRAIZ\b", "Investments"),
+    (r"\bSTAKE\b", "Investments"),
+    (r"\bBETASHARES\b", "Investments"),
+    (r"\bMOOMOO\b", "Investments"),
+    (r"\bCOINSPOT\b", "Investments"),
+
+    # --- Fees ---
+    (r"\bINTERNATIONAL\s+TRANSACTION\s+FEE\b", "Other"),

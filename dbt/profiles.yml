@@ -1,0 +1,11 @@
+spending_leak_detector:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: db
+      user: app
+      password: app
+      port: 5432
+      dbname: spending
+      schema: public

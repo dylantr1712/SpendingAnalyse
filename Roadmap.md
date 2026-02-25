@@ -1,0 +1,11 @@
+- Phase 0: Repo + Docker + DB (docker-compose, backend/frontend containers, Postgres)
+- Phase 1: CSV ingestion + normalization + movement detection (CommBank headerless support added)
+- Phase 2: dbt marts (model files added for monthly/category/review/goals/insights; dbt run/validation pending)
+- Phase 3: Review Queue + merchant mapping (implemented API + Streamlit review queue + mapping backfill)
+- Phase 4: Dashboard + insights (analytics service + category breakdown + top merchants + explainable insight cards implemented; dbt provider switch/fallback added)
+- Transactions page (implemented filters + manual category edits + review actions; API list endpoint added)
+- Transactions page scalability: month navigation, saved filter presets (session), bulk actions, months/bulk API endpoints added
+- Phase 5: Goals + encouragement (implemented goals endpoint + feasibility + encouragement + Streamlit form)
+- Phase 6: Login/Register (implemented simple local username/password register/login + HTTP Basic)
+- Phase 7: Testing + polish (partial: startup/import/review+goals regression tests added; more coverage pending)
+- Category dictionary rules applied in ingestion (normalized matching + first-match priority)

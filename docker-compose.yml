@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: spending
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://app:app@db:5432/spending
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    environment:
+      API_BASE: http://backend:8000
+    depends_on:
+      - backend
+    ports:
+      - "8501:8501"
+
+volumes:
+  pgdata:

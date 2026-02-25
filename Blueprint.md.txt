@@ -1,0 +1,526 @@
+MASTER ENGINEERING PROMPT + FULL TECHNICAL BLUEPRINT
+Spending Leak Detector
+Local-First Deterministic Personal Finance Analytics Platform
+0. Mission
+
+Build a local-first, deterministic personal finance analytics platform named:
+
+Spending Leak Detector
+
+This is NOT a banking app.
+This is NOT an AI budgeting assistant.
+
+It is a privacy-preserving analytics engine with a lightweight web UI that ingests CommBank CSV exports and helps users:
+
+understand spending month-by-month
+
+detect leaks and lifestyle creep
+
+separate financial movement from consumption
+
+auto-categorize merchants deterministically
+
+track savings goals with feasibility math
+
+receive explainable encouragement and corrective suggestions
+
+ML is optional future phase only.
+
+Everything must be deterministic.
+
+1. Core Principles (Non-Negotiable)
+
+Runs locally via Docker Compose
+
+Same input → same output
+
+User always controls categorization
+
+Movement ≠ Spending
+
+No online APIs or merchant lookups
+
+Monthly analytics is primary time grain
+
+Backend + data modeling first, UI thin
+
+Privacy first (no account numbers stored)
+
+2. Tech Stack (Mandatory)
+
+Backend:
+
+Python 3.11+
+
+FastAPI
+
+SQLAlchemy
+
+Alembic
+
+Pandas or Polars
+
+Database:
+
+Postgres (DuckDB optional dev)
+
+Analytics:
+
+dbt-core
+
+Frontend:
+
+Streamlit (preferred MVP)
+
+Infra:
+
+Docker Compose
+
+3. High Level Architecture
+
+User Browser
+→ Streamlit UI
+→ FastAPI
+→ Postgres
+→ dbt (Bronze → Silver → Gold)
+→ Streamlit via API
+
+4. CSV Input (CommBank MVP)
+
+4 columns:
+
+txn_date (DD/MM/YYYY)
+
+amount (+ income, – expense)
+
+description
+
+balance
+
+Do not store account numbers.
+Mask card references.
+
+5. Data Model
+users
+
+id
+email
+password_hash
+created_at
+
+import_batches
+
+id
+user_id
+imported_at
+row_count
+
+raw_transactions
+
+id
+import_batch_id
+txn_date_raw
+amount_raw
+description_raw
+balance_raw
+
+fct_transactions
+
+id
+user_id
+txn_date
+amount
+description_raw
+merchant_key
+category
+is_income
+is_movement
+is_high_impact
+txn_hash
+user_confirmed
+
+merchant_map
+
+user_id
+merchant_key
+category
+source (user | rule)
+updated_at
+
+user_profile
+
+user_id
+reported_total_savings
+
+goals
+
+user_id
+goal_amount
+target_date
+
+Gold dbt marts:
+
+mart_monthly_summary
+mart_category_monthly
+mart_review_queue
+mart_goal_evaluation
+mart_insights
+
+6. Merchant Normalization (Deterministic)
+
+Algorithm:
+
+Uppercase
+
+Remove punctuation
+
+Strip:
+
+CARD XX####
+
+VALUE DATE
+
+city/state suffixes
+
+Remove prefixes:
+
+PAYPAL *
+
+SQ *
+
+VISA PURCHASE
+
+DIRECT DEBIT
+
+Collapse whitespace
+
+Result becomes merchant_key.
+
+7. Movement Detection
+
+Set is_movement = true if description contains:
+
+FAST TRANSFER
+TRANSFER TO
+TRANSFER FROM
+PAYID
+OSKO
+CASH DEPOSIT
+ATM
+
+Movement excluded from spending by default.
+
+8. Category System
+
+Essentials:
+Housing
+Utilities
+Groceries
+Transport
+Health
+
+Lifestyle:
+Eating Out
+Food Delivery
+Shopping
+Entertainment
+Subscriptions
+
+Financial:
+Movement
+Savings
+Investments
+Lending
+
+Other:
+Unknown
+Other
+
+9. Definitions
+
+Expense:
+amount < 0 AND is_movement = false
+
+Income:
+amount > 0 AND is_movement = false
+
+Movement:
+is_movement = true
+
+10. Review Queue Rules
+
+Include:
+
+category == Unknown
+
+is_movement AND abs(amount)>=500
+
+abs(amount)>=100 AND discretionary
+
+Discretionary:
+Eating Out, Food Delivery, Shopping, Entertainment, Subscriptions, Other, Unknown
+
+11. Monthly Analytics
+
+month = DATE_TRUNC('month', txn_date)
+
+All insights operate monthly.
+
+12. Core Formulas
+
+income_total = sum(amount>0 AND not movement)
+
+expense_total = sum(abs(amount<0 AND not movement))
+
+net = income - expense
+
+savings_rate = net / income
+
+required_monthly =
+(goal_amount - reported_total_savings) / months_remaining
+
+historical_saving =
+median(net_last_6_months)
+
+feasibility_ratio =
+historical / required
+
+Thresholds:
+
+≥1.2 Comfortable
+0.9–1.2 On track
+0.7–0.9 At risk
+<0.7 Unrealistic
+
+Category spike:
+current > median(last6) * 1.4
+
+Lifestyle creep:
+avg(last3) - avg(prev3)
+
+Spend velocity:
+first_7_days / total_month
+
+Opportunity cost:
+extra * 12 * 0.06
+
+13. User Flow
+First Run
+
+Login
+
+Upload CSV
+
+Show detected account balance
+
+Ask:
+
+total current savings (manual)
+
+goal amount
+
+target date
+
+Redirect to Review Queue
+
+Review Queue
+
+Sections:
+
+Uncategorized merchants
+(grouped by merchant_key, dropdown category, save mapping)
+
+Large movements
+(prompt: what was this for?)
+
+High impact spend (awareness)
+
+Dashboard
+
+Default latest month.
+
+Shows:
+
+Income / Expense / Net / Savings Rate
+
+Movement total
+
+Unknown %
+
+Category breakdown
+
+Top merchants
+
+Insights Panel
+
+Category spikes
+
+Lifestyle creep
+
+Subscription burden
+
+Spend velocity
+
+Unknown drag
+
+Opportunity cost
+
+Goals Page
+
+Required monthly saving
+
+Historical saving
+
+Feasibility
+
+Projected finish
+
+Encouragement + corrective advice
+
+14. Merchant Auto-Mapping
+
+On category change:
+
+Save merchant_key → category.
+
+Next import auto-categorizes.
+
+User mapping overrides rules.
+
+15. Goals Engine
+
+User provides:
+
+reported_total_savings
+
+goal_amount
+
+target_date
+
+System computes:
+
+required_monthly
+
+historical_saving
+
+feasibility
+
+projected_date
+
+16. Encouragement Logic
+
+If ahead:
+“You’re on track to finish early.”
+
+If short:
+“You’re short $X/month.”
+
+Suggest reductions from top discretionary categories.
+
+17. Frontend Pages
+
+Upload
+Review Queue
+Dashboard
+Transactions
+Goals
+
+Streamlit minimal UI.
+
+18. API Endpoints
+
+POST /import
+GET /dashboard
+GET /review-queue
+POST /merchant-map
+POST /transaction/{id}
+POST /goals
+
+19. dbt Models
+
+stg_transactions
+mart_monthly_summary
+mart_category_monthly
+mart_review_queue
+mart_goal_evaluation
+mart_insights
+
+20. Development Roadmap
+Phase 0
+
+Repo + Docker + DB
+
+Phase 1
+
+CSV ingestion + normalization + movement detection
+
+Phase 2
+
+dbt marts
+
+Phase 3
+
+Review Queue + merchant mapping
+
+Phase 4
+
+Dashboard + insights
+
+Phase 5
+
+Goals + encouragement
+
+Phase 6
+
+Login
+
+Phase 7
+
+Testing + polish
+
+21. Testing
+
+Unit:
+normalization
+movement detection
+hashing
+
+Integration:
+dedupe
+mapping persistence
+
+Acceptance:
+CSV → Review → Dashboard → Goals → Insights
+
+22. Future ML (Not MVP)
+
+ml_category_suggestions
+ml_anomaly_flags
+
+Never auto apply.
+
+Final Instruction
+
+Build sequentially by phase.
+
+Prioritize:
+
+determinism
+
+correctness
+
+UX clarity
+
+explainability
+
+Avoid:
+
+ML
+
+fintech complexity
+
+cloud dependencies
+
+feature creep
+
+END SPEC.

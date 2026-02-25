@@ -1,0 +1,13 @@
+name: spending_leak_detector
+version: '1.0'
+config-version: 2
+
+profile: spending_leak_detector
+
+model-paths: ["models"]
+
+models:
+  spending_leak_detector:
+    +materialized: view
+    marts:
+      +materialized: table
